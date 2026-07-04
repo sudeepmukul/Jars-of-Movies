@@ -25,16 +25,18 @@ import { AnimatePresence } from 'framer-motion';
 import JarGrid         from './components/JarGrid';
 import PaperSlipAnimation from './components/PaperSlipAnimation';
 import AddMovieModal   from './components/AddMovieModal';
+import MoodDetector    from './components/MoodDetector';
 import { useJarMovies } from './hooks/useJarMovies';
 
 const App = memo(function App() {
-  const { jars, addCustomMovie } = useJarMovies();
+  const { jars, addCustomMovie, isLoading, error } = useJarMovies();
 
   // Active animation state
   const [activeJar,    setActiveJar]    = useState(null);
   const [activeRect,   setActiveRect]   = useState(null);
   const [activeMovie,  setActiveMovie]  = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showMoodDetector, setShowMoodDetector] = useState(false);
 
   /**
    * Called by Jar after its shake animation (300ms) completes.
@@ -84,15 +86,32 @@ const App = memo(function App() {
 
       <div className="app">
         {/* Header */}
-        <header className="app-header">
+        <header className="app-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <h1 className="app-title">🍯 Jars of Movies</h1>
           <p className="app-subtitle">
             Pick a mood — let a movie find you ✨
           </p>
+          <button 
+            className="btn-primary" 
+            onClick={() => setShowMoodDetector(true)}
+            style={{ marginTop: '1rem', padding: '0.75rem 1.5rem', borderRadius: '30px', fontSize: '1rem' }}
+          >
+            🎥 What should I watch? (Mood Cam)
+          </button>
         </header>
 
         {/* Jar grid — memoized, unaffected by modal state */}
-        <JarGrid jars={jars} onJarClick={handleJarClick} />
+        {isLoading ? (
+          <div style={{ textAlign: 'center', marginTop: '4rem', fontSize: '1.2rem', color: 'var(--text-color)' }}>
+            Loading Jars...
+          </div>
+        ) : error ? (
+          <div style={{ textAlign: 'center', marginTop: '4rem', color: 'red' }}>
+            Error: {error}
+          </div>
+        ) : (
+          <JarGrid jars={jars} onJarClick={handleJarClick} />
+        )}
       </div>
 
       {/* ----------------------------------------------------------------
@@ -117,15 +136,19 @@ const App = memo(function App() {
           Rendered above the animation layer (z-index 120)
       ---------------------------------------------------------------- */}
       <AnimatePresence>
-        {showAddModal && activeJar && (
+        {/* Add Movie Sub-Modal */}
+        {showAddModal && (
           <AddMovieModal
-            key="add-modal"
             jar={activeJar}
-            onAdd={handleAddMovie}
             onClose={handleCloseAddModal}
+            onAdd={handleAddMovie}
           />
         )}
       </AnimatePresence>
+      
+      {showMoodDetector && (
+        <MoodDetector onClose={() => setShowMoodDetector(false)} />
+      )}
     </>
   );
 });
